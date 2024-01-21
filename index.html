@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Drag data plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-dragdata"></script>
+    <!-- Moment.js for handling time -->
+    <script src="https://cdn.jsdelivr.net/npm/moment"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+    <!-- Annotation plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/1.0.2/chartjs-plugin-annotation.js"></script>
+    <link rel="stylesheet" href="styles1.css">
+    <style>
+        .chart-container {
+            margin-top: 20px;
+            position: relative;
+            height: 50vh;
+            width: 80vw;
+            margin: auto;
+            /* Center the chart horizontally */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="heading">
+        <h1>Interactive Chart</h1>
+        <p>Enter sunrise and sunnset time</p>
+    </div>
+
+    <div class="input-container">
+
+        <input type="text" id="sunriseInput" placeholder="Sunrise HH:mm">
+
+        <input type="text" id="sunsetInput" placeholder="Sunset HH:mm">
+        <button id="sunbtn" onclick="plot.updateSunriseSunset()">Update Sunrise and Sunset</button>
+    </div>
+    <div class="chart-container">
+        <canvas id="myChart" style="cursor: pointer;"></canvas>
+    </div>
+
+    <!-- 
+       <div class="info-container">
+            <h1 class="mainHead">Instruction</h1>
+            <p class="head">How to Add data:</p>
+            <p>1. Place data point on chart.</br>
+                2. Place second data point and zoom out. </br>
+                3. Hold cursor in middle of data line so when zoom out it will stay more in middle.</br>
+            </p>
+            <p class="head"> How to Edit data:</p>
+            <p>1. Placed Data points can see in data table under chart.</p>
+            <p>2. Choose data value what you want to edit and click on it.</p>
+            <p>3. In window enter your value and press OK (press cancel to cancel editing process)</p>
+            <p>4. Editing time value you need to write E.g. 22:45 (colon need to be enter by user) </p>
+            <p>5. After edit is finish data will change in chart</p>
+
+            <p class="head"> How to Move data:</p>
+            <p>1. To move data in chart click and hold with left mouse button data point. </p>
+            <p>2. To finish moving data point let go left mmouse button. </p>
+
+            <p class="head">How to Remove data:</p>
+            <p>1. To remove data from chart click right mouse button on selected data point</p>
+            <p>2. Moving data point in normal speed so when selected data point reach other data point it will be removed automatically. </p>
+
+            <p class="head">How to Save data:</p>
+            <p>1. To save data that has been placed in chart press Download Data</p>
+            <p>2. Data will download on your device in jason file</p>
+
+        </div> -->
+    </div>
+
+    <div class="button-container">
+        <button class="downloadbtn" id="downloadbtn" onclick="plot.downloadData()">Download Data</button>
+        <button class="addbtn" id="addbtn" onclick="plot.addNewRow()">Add New Row</button>
+    </div>
+    <div class="table-container">
+        <!-- <button class="downloadbtn" id="downloadbtn" onclick="plot.downloadData()">Download Data</button> -->
+        <table id="data-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Value</th>
+                    <th>Visibility</th>
+                    <th>Actions</th>
+            </thead>
+            <tbody>
+                <!-- Table body will be populated dynamically -->
+            </tbody>
+        </table>
+        <!-- <button class="addbtn" id="addbtn" onclick="plot.addNewRow()">Add New Row</button> -->
+        <!-- <button class="downloadbtn" id="downloadbtn" onclick="plot.downloadData()">Download Data</button>
+        <button class="addbtn" id="addbtn" onclick="plot.addNewRow()">Add New Row</button> -->
+    </div>
+
+    <!-- <div class="button-container">
+        <button class="downloadbtn" id="downloadbtn" onclick="plot.downloadData()">Download Data</button>
+        <button class="addbtn" id="addbtn" onclick="plot.addNewRow()">Add New Row</button>
+    </div> -->
+    <script>
+        class DraggablePlotExample {
+            constructor() {
+                this.chart = null;
+                this.draggingPoint = null;
+                this.points = {};
+                this.animationFrameId = null;
+                this.initPlot();
+            }
+
+            findPoint(time) {
+                const timestamp = time.valueOf();
+                return this.points[timestamp];
+            }
+
+            initPlot() {
+                const ctx = document.getElementById('myChart');
+                this.chart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Example plot',
+                            data: [],
+                            backgroundColor: 'blue',
+                            pointRadius: 8,
+                            pointHoverBackgroundColor: 'red',
+                            fill: false,
+                            pointHoverRadius: 5,
+                        }, {
+                            type: 'line',
+                            data: [],
+                            borderColor: 'blue',
+                            fill: false,
+                            borderWidth: 2,
+                            showLine: true,
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'hour',
+                                    displayFormats: {
+                                        hour: 'HH:mm'
+                                    }
+                                },
+                                position: 'bottom',
+                                min: moment().startOf('day'),
+                                max: moment().endOf('day'),
+                                ticks: {
+                                    major: {
+                                        enabled: true
+                                    },
+                                    maxRotation: 0,
+                                    autoSkipPadding: 75,
+                                    source: 'data1',
+                                    autoSkip: true,
+                                    data1: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00']
+                                },
+                                afterBuildTicks: function(scale, ticks) {
+                                    return ticks;
+                                }
+                            },
+                            y: {
+                                type: 'linear',
+                                position: 'left',
+                                min: -5,
+                                max: 110
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            annotation: {
+                                annotations: [{
+                                    type: 'line',
+                                    mode: 'vertical',
+                                    scaleID: 'x',
+                                    value: moment().startOf('day').add(6, 'hours').valueOf(),
+                                    borderColor: 'rgba(255, 0, 0, 0.7)',
+                                    borderWidth: 2,
+                                    label: {
+                                        content: 'Sunrise',
+                                        enabled: true,
+                                        position: 'top'
+                                    }
+                                }, {
+                                    type: 'line',
+                                    mode: 'vertical',
+                                    scaleID: 'x',
+                                    value: moment().startOf('day').add(18, 'hours').valueOf(),
+                                    borderColor: 'rgba(255, 165, 0, 0.7)',
+                                    borderWidth: 2,
+                                    label: {
+                                        content: 'Sunset',
+                                        enabled: true,
+                                        position: 'top',
+
+                                    }
+                                }]
+                            }
+                        },
+                        animation: {
+                            duration: 0
+                        }
+                    }
+                });
+
+                ctx.onclick = (event) => this.onClick(event);
+                ctx.onmousemove = (event) => this._onMotion(event);
+                ctx.addEventListener('contextmenu', (event) => this.onRightClick(event));
+            }
+            updateSunriseSunset() {
+                // Get the values from the input fields
+                const sunriseInput = document.getElementById('sunriseInput').value;
+                const sunsetInput = document.getElementById('sunsetInput').value;
+
+
+                if (this.isValidTimeFormat(sunriseInput) && this.isValidTimeFormat(sunsetInput)) {
+                    // Convert the times to moment
+                    const sunriseMoment = moment(sunriseInput, 'HH:mm');
+                    const sunsetMoment = moment(sunsetInput, 'HH:mm');
+
+                    // Get the time for sunrise and sunset
+                    const sunriseTimestamp = moment().startOf('day').add(sunriseMoment.hours(), 'hours').add(sunriseMoment.minutes(), 'minutes').valueOf();
+                    const sunsetTimestamp = moment().startOf('day').add(sunsetMoment.hours(), 'hours').add(sunsetMoment.minutes(), 'minutes').valueOf();
+
+                    // Update the annotation values
+                    this.chart.options.plugins.annotation.annotations[0].value = sunriseTimestamp;
+                    this.chart.options.plugins.annotation.annotations[1].value = sunsetTimestamp;
+
+                    // Update the chart
+                    this.chart.update();
+                } else {
+                    alert('Invalid time format. Please enter times in HH:mm format.');
+                }
+            }
+
+            isValidTimeFormat(time) {
+                //  logic for HH:mm format
+                const regex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+                return regex.test(time);
+            }
+
+            convertTimeToTimestamp(time) {
+                // Convert HH:mm time to a timestamp 
+                const [hours, minutes] = time.split(':').map(Number);
+                return moment().hours(hours).minutes(minutes).valueOf();
+            }
+
+
+            updatePlot() {
+                if (!this.animationFrameId) {
+                    this.animationFrameId = requestAnimationFrame(() => {
+                        const data = Object.keys(this.points).map((x) => ({
+                            x: parseFloat(x),
+                            y: this.points[x],
+                        }));
+                        this.chart.data.datasets[0].data = data;
+
+                        const lineData = data.slice().sort((a, b) => a.x - b.x);
+                        this.chart.data.datasets[1].data = lineData;
+
+                        this.chart.update();
+                        this.animationFrameId = null;
+                    });
+                }
+            }
+            addPoint(x, y) {
+                // Make sure y is between 0 and 100
+                y = Math.min(100, Math.max(0, y));
+
+                // Make sure x is between 00:00 and 23:59
+                const minX = moment().startOf('day').valueOf();
+                const maxX = moment().endOf('day').valueOf();
+                x = Math.min(maxX, Math.max(minX, x));
+
+                // Check if the point already exists at the same x axel
+                if (this.points[x] !== undefined) {
+
+                    this.points[x] = y;
+                } else {
+                    // Add the new point
+                    this.points[x] = y;
+                }
+
+                return {
+                    x,
+                    y
+                };
+            }
+
+            removePoint(x, _) {
+                if (x in this.points) {
+                    delete this.points[x];
+                }
+            }
+
+            findNeighborPoint(mouseX, mouseY) {
+                const distanceThreshold = 20.0;
+                let nearestPoint = null;
+                let minDistance = Math.sqrt(2 * (100 ** 2));
+
+                for (const x in this.points) {
+                    const y = this.points[x];
+                    const distance = Math.hypot(mouseX - this.chart.scales.x.getPixelForValue(x),
+                        mouseY - this.chart.scales.y.getPixelForValue(y));
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestPoint = {
+                            x,
+                            y
+                        };
+                    }
+                }
+
+                return minDistance < distanceThreshold ? nearestPoint : null;
+            }
+
+            formatTime(xValue) {
+                const timestamp = xValue;
+                const date = new Date(timestamp);
+
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+
+                return `${hours}:${minutes}`;
+            }
+
+            onClick(event) {
+                const rect = this.chart.canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                const xValue = this.chart.scales.x.getValueForPixel(mouseX);
+                const yValue = this.chart.scales.y.getValueForPixel(mouseY);
+
+                const point = this.addPoint(xValue, yValue);
+                this.draggingPoint = point;
+
+                this.updatePlot();
+
+                const formattedTime = this.formatTime(xValue);
+                console.log('Formatted Time:', formattedTime);
+            }
+
+            _onMotion(event) {
+                const rect = this.chart.canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                const x = this.chart.scales.x.getValueForPixel(mouseX);
+                let y = this.chart.scales.y.getValueForPixel(mouseY);
+
+                // Set y to 0 if it goes below 0
+                y = Math.max(0, y);
+
+                if (event.buttons === 1) { // Check if left mouse button is pressed
+                    if (!this.draggingPoint) {
+                        const nearestPoint = this.findNeighborPoint(mouseX, mouseY);
+                        if (nearestPoint) {
+                            this.draggingPoint = nearestPoint;
+                        } else {
+                            this.draggingPoint = this.addPoint(x, y);
+                        }
+                    } else {
+                        this.removePoint(this.draggingPoint.x, this.draggingPoint.y);
+                        this.draggingPoint = this.addPoint(x, y);
+                    }
+                    this.updatePlot();
+                } else {
+                    this.draggingPoint = null;
+                }
+            }
+
+            onRightClick(event) {
+                event.preventDefault();
+
+                const rect = this.chart.canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                const nearestPoint = this.findNeighborPoint(mouseX, mouseY);
+
+                if (nearestPoint) {
+                    this.removePoint(nearestPoint.x, nearestPoint.y);
+                    this.updatePlot();
+                }
+            }
+
+            updateTable() {
+                const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+                tableBody.innerHTML = '';
+
+                // Get the data points and sort them by timestamp in ascending order
+                const sortedData = Object.keys(this.points).map(x => ({
+                    x: parseFloat(x),
+                    y: this.points[x]
+                })).sort((a, b) => a.x - b.x);
+
+                for (const point of sortedData) {
+                    const roundedValue = Math.ceil(point.y);
+                    const formattedTime = this.formatTime(point.x);
+
+                    const row = tableBody.insertRow();
+                    const cell1 = row.insertCell(0);
+                    const cell2 = row.insertCell(1);
+                    const visibilityCell = row.insertCell(2);
+                    const actionCell = row.insertCell(3);
+
+                    cell1.textContent = formattedTime;
+                    cell2.textContent = roundedValue;
+
+                    // Using click to update value on cell 
+                    cell2.addEventListener('click', () => this.updateValue(point.x));
+
+                    // using click to update time on cell 
+                    cell1.addEventListener('click', () => this.updateTime(point.x));
+
+                    // Dropdown for visibility
+                    const visibilityDropdown = document.createElement('select');
+                    visibilityDropdown.innerHTML = `
+                    <option value="on">On</option>
+                    <option value="off">Off</option>
+                `;
+
+                    visibilityDropdown.value = 'on'; // Default value is 'on'
+
+                    visibilityDropdown.addEventListener('change', () => this.toggleVisibility(point.x, visibilityDropdown.value));
+
+                    visibilityCell.appendChild(visibilityDropdown);
+
+                    // Add delete button in the action column
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.style.width = '100%';
+                    deleteButton.style.height = '100%';
+                    deleteButton.style.color = 'white';
+                    deleteButton.style.borderRadius = '4px';
+                    deleteButton.style.backgroundColor = '#e53030';
+
+                    deleteButton.addEventListener('click', () => this.deleteRow(point.x));
+                    actionCell.appendChild(deleteButton);
+                }
+            }
+
+            isDataPointVisible(timestamp) {
+                return this.chart.data.datasets.some(dataset =>
+                    dataset.data.some(point => point.x === timestamp)
+                );
+            }
+
+            toggleVisibility(x, visibility) {
+                const timestamp = parseFloat(x);
+
+                // Check if the point is turned off
+                const isTurnedOff = !this.isDataPointVisible(timestamp);
+
+                // If the point is turned off, prevent changing the visibility
+                if (isTurnedOff) {
+                    return;
+                }
+
+                const isVisible = this.isDataPointVisible(timestamp);
+
+                // Skip toggling visibility if the point is a new row with default visibility
+                if (isVisible && this.points[timestamp].visibility === 'on' && visibility === 'on') {
+                    return;
+                }
+
+                if (visibility === 'on' && !isVisible) {
+                    const yValue = this.points[timestamp];
+
+                    // Add the data point to datasets
+                    this.chart.data.datasets.forEach(dataset => {
+                        dataset.data.push({
+                            x: timestamp,
+                            y: yValue
+                        });
+                        dataset.data.sort((a, b) => a.x - b.x);
+                    });
+                } else if (visibility === 'off' && isVisible) {
+                    // Remove the data point from both datasets
+                    this.chart.data.datasets.forEach(dataset => {
+                        dataset.data = dataset.data.filter(point => point.x !== timestamp);
+                        dataset.data.sort((a, b) => a.x - b.x);
+                    });
+                }
+
+                // Update the chart
+                this.chart.update();
+            }
+
+            deleteRow(x) {
+                delete this.points[x];
+                this.updatePlot();
+            }
+            updateValue(x) {
+                const startValue = this.points[x];
+                const currentValue = Math.round(startValue);
+
+                let newValue = prompt(`Enter a new value for the selected point (current value: ${currentValue}):`);
+
+                // Continue showing message till valid value or cancel is pressed
+                while (newValue !== null && (isNaN(newValue) || parseFloat(newValue) > 100 || parseFloat(newValue) < 0)) {
+                    newValue = prompt("Invalid value. Please enter a number between 0 and 100:");
+                }
+
+                if (newValue !== null && newValue !== '') {
+                    // Ensure the new value is within the range of (0 to 100)
+                    newValue = Math.min(100, Math.max(0, parseFloat(newValue)));
+
+                    this.points[x] = newValue;
+                    this.updatePlot();
+                }
+            }
+
+            updateTime(x) {
+                const currentTimestamp = parseFloat(x);
+                const currentFormattedTime = this.formatTime(currentTimestamp);
+
+                let newFormattedTime = prompt(`Enter a new time for the selected point (current time: ${currentFormattedTime}):`);
+
+                // Correct entered time
+                while (newFormattedTime !== null && !this.isValidTimeFormat(newFormattedTime)) {
+                    newFormattedTime = prompt("Invalid time format. Please enter a valid time (HH:mm) E.g.: 15:32");
+                }
+
+                if (newFormattedTime !== null && newFormattedTime !== '') {
+                    const newTimestamp = moment(newFormattedTime, 'HH:mm').valueOf();
+                    this.points[newTimestamp] = this.points[currentTimestamp];
+                    delete this.points[currentTimestamp];
+                    this.updatePlot();
+                }
+            }
+
+            isValidTimeFormat(time) {
+                // Correct time format using a regular 24 hour (HH:mm)
+                const regex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+                return regex.test(time);
+            }
+
+            updatePlot() {
+                const data = Object.keys(this.points).map(x => ({
+                    x: parseFloat(x),
+                    y: this.points[x]
+                }));
+
+                // y axel limits (0 and 100)
+                const boundedData = data.map(point => ({
+                    x: point.x,
+                    y: Math.min(Math.max(point.y, 0), 100)
+                }));
+
+                this.chart.data.datasets[0].data = boundedData;
+
+                const lineData = boundedData.slice().sort((a, b) => a.x - b.x);
+                this.chart.data.datasets[1].data = lineData;
+
+                this.chart.update();
+                this.updateTable();
+            }
+            addNewRow() {
+                const currentTime = moment().startOf('hour');
+                const formattedTime = this.formatTime(currentTime);
+
+                const newRow = {
+                    x: currentTime.valueOf(),
+                    y: 50 // Default value make how i want
+                };
+
+                // Prompt for a new time
+                let newFormattedTime = prompt(`Enter a time for the new row (HH:mm):`, formattedTime);
+
+                // Validate the entered time
+                while (newFormattedTime !== null && !this.isValidTimeFormat(newFormattedTime)) {
+                    newFormattedTime = prompt("Invalid time format. Please enter a valid time (HH:mm):");
+                }
+
+                if (newFormattedTime === null) {
+                    // When user pressed Cancel
+                    return;
+                }
+
+                const newTimestamp = moment(newFormattedTime, 'HH:mm').valueOf();
+                newRow.x = newTimestamp;
+
+                // Prompt for a new value
+                let newValue = prompt(`Enter a value for the new row (0-100):`, newRow.y);
+
+                // Validate the entered value
+                while (newValue !== null && (isNaN(newValue) || parseFloat(newValue) > 100 || parseFloat(newValue) < 0)) {
+                    newValue = prompt("Invalid value. Please enter a number between 0 and 100:");
+                }
+
+                if (newValue === null) {
+                    // When user pressed Cancel
+                    return;
+                }
+
+                newRow.y = Math.min(100, Math.max(0, parseFloat(newValue)));
+
+                // Add the new point
+                this.points[newRow.x] = newRow.y;
+
+                // Update the plot and table
+                this.updatePlot();
+            }
+
+
+            isValidTimeFormat(time) {
+                // Correct time format using a regular 24 hour (HH:mm)
+                const regex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+                return regex.test(time);
+            }
+
+            downloadData() {
+                const dataArray = Object.keys(this.points).map(timestamp => {
+                    const time = this.formatTime(parseFloat(timestamp));
+                    const value = Math.ceil(this.points[timestamp]);
+                    return {
+                        time,
+                        value
+                    };
+                });
+
+                // Sorts by the time in asc order
+                dataArray.sort((a, b) => a.time.localeCompare(b.time));
+
+                const jsonData = JSON.stringify(dataArray, null, 2);
+                const blob = new Blob([jsonData], {
+                    type: 'application/json'
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'data.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+
+
+        }
+
+        function validateTimeInput(input) {
+            // Ensure the input value matches the HH:mm format
+            const regex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+            const inputValue = input.value;
+
+            if (!regex.test(inputValue)) {
+                // If not a valid time format, clear the input
+                input.value = '';
+                return;
+            }
+
+            // Ensure hours are within the range [00, 23]
+            const hours = parseInt(inputValue.split(':')[0], 10);
+            if (hours < 0 || hours > 23) {
+                input.value = '';
+                return;
+            }
+
+            // Ensure minutes are within the range [00, 59]
+            const minutes = parseInt(inputValue.split(':')[1], 10);
+            if (minutes < 0 || minutes > 59) {
+                input.value = '';
+            }
+        }
+
+        const plot = new DraggablePlotExample();
+    </script>
+</body>
+
+</html>
