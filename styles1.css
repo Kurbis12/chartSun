@@ -166,6 +166,14 @@ td {
         flex-direction: column;
         align-items: center;
     }
+    .button-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    .table-container {
+        flex-direction: column;
+        align-items: center;
+    }
     .chart-container {
         width: 100%;
         margin-bottom: 20px;
@@ -175,5 +183,13 @@ td {
     }
     table {
         width: 100%;
+    }
+    #data-table {
+        flex-direction: column;
+        align-items: center;
+    }
+    .input-container {
+        flex-direction: column;
+        align-items: center;
     }
 }
