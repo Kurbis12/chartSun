@@ -1,0 +1,179 @@
+#warn {
+    color: red;
+}
+
+.downloadbtn {
+    margin-right: 5px;
+    justify-content: center;
+    margin-top: 25px;
+    background-color: #198754;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    padding: 12px 30px;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.downloadbtn:hover {
+    background-color: rgb(37, 146, 79);
+}
+
+#sunsetInput {
+    margin-left: 5px;
+    justify-content: center;
+    margin-top: 5px;
+    border: 1px solid black;
+    border-radius: 8px;
+    color: black;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+#sunbtn {
+    margin-left: 5px;
+    justify-content: center;
+    margin-top: 5px;
+    border: none;
+    background-color: #6c868f;
+    border-radius: 8px;
+    color: white;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+#sunriseInput {
+    margin-left: 5px;
+    justify-content: center;
+    margin-top: 5px;
+    border: 1px solid black;
+    border-radius: 8px;
+    color: black;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.addbtn {
+    margin-left: 5px;
+    justify-content: center;
+    margin-top: 25px;
+    border: none;
+    background-color: #014c90;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    padding: 12px 30px;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.input-container {
+    margin-bottom: 20px;
+    position: relative;
+    width: 80vw;
+    margin: auto;
+    /* Center the chart horizontally */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.addbtn:hover {
+    background-color: #3366ff;
+}
+
+.chart-container {
+    margin-bottom: 20px;
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    height: 40vh;
+    width: 50%;
+}
+
+.table-container {
+    margin-top: 30px;
+    display: center;
+    width: 50%;
+}
+
+.info-container {
+    display: inline-block;
+    vertical-align: top;
+    width: 35vw;
+    padding: 10px;
+}
+
+.button-container {
+    position: relative;
+    width: 80vw;
+    margin: auto;
+    /* Center the chart horizontally */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+#data-table {
+    margin-top: 20px;
+    width: 50%;
+    text-align: center;
+}
+
+.heading {
+    text-align: center;
+}
+
+.table-container {
+    position: relative;
+    width: 80vw;
+    margin: auto;
+    /* Center the chart horizontally */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+table {
+    align-items: center;
+    border-collapse: collapse;
+    z-index: 1;
+}
+
+table,
+th,
+td {
+    border: 1px solid black;
+}
+
+th,
+td {
+    padding: 8px;
+    text-align: center;
+}
+
+@media screen and (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        align-items: center;
+    }
+    .chart-container {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    .info-container {
+        width: 100%;
+    }
+    table {
+        width: 100%;
+    }
+}
